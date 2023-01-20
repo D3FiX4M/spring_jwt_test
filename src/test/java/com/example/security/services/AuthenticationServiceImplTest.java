@@ -9,6 +9,7 @@ import com.example.security.entity.Role;
 import com.example.security.entity.User;
 import com.example.security.repository.RoleRepository;
 import com.example.security.repository.UserRepository;
+import com.example.security.services.Implementations.AuthenticationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,10 +28,10 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AuthenticationServiceTest {
+class AuthenticationServiceImplTest {
 
     @InjectMocks
-    private AuthenticationService authenticationService;
+    private AuthenticationServiceImpl authenticationServiceImpl;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -89,7 +90,7 @@ class AuthenticationServiceTest {
                 .thenReturn(true);
 
         MessageResponse messageResponse =
-                authenticationService.registerNewUser(registerRequest);
+                authenticationServiceImpl.registerNewUser(registerRequest);
 
         assertThat(messageResponse.getMessage())
                 .isEqualTo("Error: Username is already taken!");
@@ -105,7 +106,7 @@ class AuthenticationServiceTest {
                 .thenReturn(true);
 
         MessageResponse messageResponse =
-                authenticationService.registerNewUser(registerRequest);
+                authenticationServiceImpl.registerNewUser(registerRequest);
 
         assertThat(messageResponse.getMessage())
                 .isEqualTo("Error: Email is already taken!");
@@ -127,7 +128,7 @@ class AuthenticationServiceTest {
         doNothing().when(emailSenderService).sendEmail(any());
 
         MessageResponse messageResponse =
-                authenticationService.registerNewUser(registerRequest);
+                authenticationServiceImpl.registerNewUser(registerRequest);
 
         assertThat(messageResponse.getMessage())
                 .isEqualTo("User registered successfully, now to confirm your email account!");
@@ -142,7 +143,7 @@ class AuthenticationServiceTest {
                 thenReturn(Optional.ofNullable(user));
 
         AuthenticationResponse gettingAuthenticationResponse =
-                authenticationService.authenticate(authenticationRequest);
+                authenticationServiceImpl.authenticate(authenticationRequest);
 
         assertThat(gettingAuthenticationResponse).isEqualTo(null);
     }
@@ -158,7 +159,7 @@ class AuthenticationServiceTest {
         when(jwtService.generateToken(user)).thenReturn("testToken");
 
         AuthenticationResponse gettingAuthenticationResponse =
-                authenticationService.authenticate(authenticationRequest);
+                authenticationServiceImpl.authenticate(authenticationRequest);
 
         assertThat(gettingAuthenticationResponse.getToken()).isEqualTo("testToken");
         assertThat(gettingAuthenticationResponse.getUsername()).isEqualTo(authenticationResponse.getUsername());
@@ -174,7 +175,7 @@ class AuthenticationServiceTest {
                 .thenReturn(Optional.ofNullable(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        MessageResponse messageResponse = authenticationService.confirmAccount(code);
+        MessageResponse messageResponse = authenticationServiceImpl.confirmAccount(code);
 
         assertThat(user.getActivationCode()).isEqualTo("active");
         assertThat(messageResponse.getMessage())

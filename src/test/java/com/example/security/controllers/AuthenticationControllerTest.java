@@ -5,7 +5,7 @@ import com.example.security.dto.request.RegisterRequest;
 import com.example.security.dto.response.AuthenticationResponse;
 import com.example.security.dto.response.MessageResponse;
 import com.example.security.entity.User;
-import com.example.security.services.AuthenticationService;
+import com.example.security.services.Implementations.AuthenticationServiceImpl;
 import com.example.security.services.Implementations.UserDetailsServiceImpl;
 import com.example.security.services.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +38,7 @@ class AuthenticationControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private AuthenticationService authenticationService;
+    private AuthenticationServiceImpl authenticationServiceImpl;
 
     @MockBean
     private JwtService jwtService;
@@ -80,7 +80,7 @@ class AuthenticationControllerTest {
     @Test
     void should_Register() throws Exception {
 
-        when(authenticationService.registerNewUser(registerRequest)).
+        when(authenticationServiceImpl.registerNewUser(registerRequest)).
                 thenReturn(new MessageResponse("User registered successfully, now to confirm your email account!"));
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
@@ -97,7 +97,7 @@ class AuthenticationControllerTest {
     @Test
     void should_Register_give_error_Username_already_taken() throws Exception {
 
-        when(authenticationService.registerNewUser(registerRequest)).
+        when(authenticationServiceImpl.registerNewUser(registerRequest)).
                 thenReturn(new MessageResponse("Error: Username is already taken!"));
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
@@ -113,7 +113,7 @@ class AuthenticationControllerTest {
     @Test
     void should_Register_give_error_Email_already_taken() throws Exception {
 
-        when(authenticationService.registerNewUser(registerRequest)).
+        when(authenticationServiceImpl.registerNewUser(registerRequest)).
                 thenReturn(new MessageResponse("Error: Email is already taken!"));
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
@@ -129,7 +129,7 @@ class AuthenticationControllerTest {
     @Test
     void should_Register_give_error_Role_is_invalid() throws Exception {
 
-        when(authenticationService.registerNewUser(registerRequest)).
+        when(authenticationServiceImpl.registerNewUser(registerRequest)).
                 thenReturn(new MessageResponse("Error: Roles is invalid"));
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
@@ -145,7 +145,7 @@ class AuthenticationControllerTest {
     @Test
     void should_Authenticate_Give_400() throws Exception {
         String message = "Invalid activation";
-        when(authenticationService.authenticate(authenticationRequest)).thenReturn(null);
+        when(authenticationServiceImpl.authenticate(authenticationRequest)).thenReturn(null);
 
         ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -160,7 +160,7 @@ class AuthenticationControllerTest {
     void should_Authenticate() throws Exception {
 
 
-        when(authenticationService.authenticate(authenticationRequest)).
+        when(authenticationServiceImpl.authenticate(authenticationRequest)).
                 thenReturn(authenticationResponse);
 
         ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
@@ -177,7 +177,7 @@ class AuthenticationControllerTest {
     @Test
     void should_ConfirmAccount() throws Exception {
         String activationCode = "testCode";
-        when(authenticationService.confirmAccount(activationCode))
+        when(authenticationServiceImpl.confirmAccount(activationCode))
                 .thenReturn(new MessageResponse("Account activate successfully!"));
 
         ResultActions response = mockMvc.perform(get("/api/auth/confirm-account?code=" + activationCode)

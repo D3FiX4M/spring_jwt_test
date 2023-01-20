@@ -4,7 +4,7 @@ import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RegisterRequest;
 import com.example.security.dto.response.AuthenticationResponse;
 import com.example.security.dto.response.MessageResponse;
-import com.example.security.services.AuthenticationService;
+import com.example.security.services.Implementations.AuthenticationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthenticationController {
 
-    private final AuthenticationService authenticationService;
+    private final AuthenticationServiceImpl authenticationServiceImpl;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(
             @RequestBody RegisterRequest request
     ) {
-        return ResponseEntity.ok(authenticationService.registerNewUser(request));
+        return ResponseEntity.ok(authenticationServiceImpl.registerNewUser(request));
     }
 
 
@@ -28,7 +28,7 @@ public class AuthenticationController {
     public ResponseEntity<?> authenticate(
             @RequestBody AuthenticationRequest request
     ) {
-        AuthenticationResponse isAuthenticate = authenticationService.authenticate(request);
+        AuthenticationResponse isAuthenticate = authenticationServiceImpl.authenticate(request);
 
         if (isAuthenticate == null) {
             return ResponseEntity.badRequest().body(new MessageResponse("Invalid activation"));
@@ -41,6 +41,6 @@ public class AuthenticationController {
     public ResponseEntity<?> confirmAccount(
             @RequestParam("code") String request
     ) {
-        return ResponseEntity.ok(authenticationService.confirmAccount(request));
+        return ResponseEntity.ok(authenticationServiceImpl.confirmAccount(request));
     }
 }

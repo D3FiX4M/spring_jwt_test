@@ -1,10 +1,13 @@
 package com.example.security.controllers;
 
+import com.example.security.dto.request.IdRequest;
 import com.example.security.dto.response.MessageResponse;
+import com.example.security.dto.response.UserResponse;
 import com.example.security.entity.User;
+import com.example.security.repository.UserRepository;
 import com.example.security.services.Implementations.UserDetailsServiceImpl;
 import com.example.security.services.JwtService;
-import com.example.security.services.UserService;
+import com.example.security.services.Implementations.UserServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +40,8 @@ class UserControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
+
     @MockBean
     private JwtService jwtService;
     @MockBean
@@ -47,10 +51,19 @@ class UserControllerTest {
     private ObjectMapper objectMapper;
 
     User user;
+    UserResponse userResponse;
 
     @BeforeEach
     public void init() {
         user = User.builder()
+                .username("test1")
+                .password("1")
+                .roles(null)
+                .email("something@gmail.com")
+                .activationCode("active")
+                .build();
+
+        userResponse = UserResponse.builder()
                 .username("test1")
                 .password("1")
                 .roles(null)
@@ -66,7 +79,7 @@ class UserControllerTest {
         List<User> userList = new ArrayList<>();
         userList.add(user);
 
-        when(userService.getUserList()).thenReturn(userList);
+        when(userServiceImpl.getUserList()).thenReturn(userList);
 
         ResultActions response = mockMvc.perform(get("/api/user/userList")
                 .contentType(MediaType.APPLICATION_JSON));
@@ -79,33 +92,39 @@ class UserControllerTest {
     @Test
     void shouldReturnUserById() throws Exception {
         int id = 1;
-        when(userService.getUserById(id)).thenReturn(user);
+        userResponse.setId(1);
+        when(userServiceImpl.getUserById(id)).thenReturn(userResponse);
 
         ResultActions response = mockMvc.perform(get("/api/user/userList/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)));
+                .content(objectMapper.writeValueAsString(userResponse)));
 
         response.andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id", CoreMatchers.is(user.getId())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.username", CoreMatchers.is(user.getUsername())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.password", CoreMatchers.is(user.getPassword())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.roles", CoreMatchers.is(user.getRoles())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email", CoreMatchers.is(user.getEmail())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.activationCode", CoreMatchers.is(user.getActivationCode())));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id", CoreMatchers.is(userResponse.getId())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username", CoreMatchers.is(userResponse.getUsername())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.password", CoreMatchers.is(userResponse.getPassword())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.roles", CoreMatchers.is(userResponse.getRoles())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.email", CoreMatchers.is(userResponse.getEmail())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.activationCode", CoreMatchers.is(userResponse.getActivationCode())));
+
     }
 
 
     @Test
     void shouldDeleteUserById() throws Exception {
-        int id = 1;
-        when(userService.deleteUserById(id)).thenReturn(new MessageResponse("User "+ id +" deleted"));
+
+        IdRequest idRequest = IdRequest.builder()
+                .id(1)
+                .build();
+
+        when(userServiceImpl.deleteUserById(idRequest)).thenReturn(new MessageResponse("User " + idRequest.getId() + " deleted"));
 
         ResultActions response = mockMvc.perform(post("/api/user/userList")
-                        .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(1)));
 
         response.andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("User "+ id +" deleted")));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("User " + idRequest.getId() + " deleted")));
 
     }
 
