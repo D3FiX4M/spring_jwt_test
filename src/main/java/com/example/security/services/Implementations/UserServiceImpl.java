@@ -1,5 +1,6 @@
 package com.example.security.services.Implementations;
 
+import com.example.security.Exceptions.NotFoundException;
 import com.example.security.dto.request.IdRequest;
 import com.example.security.dto.response.MessageResponse;
 import com.example.security.dto.response.UserResponse;
@@ -25,7 +26,7 @@ public class UserServiceImpl implements UserService {
 
     public UserResponse getUserById(Integer id){
 
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Invalid id"));
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User with this id was not found"));
 
         return UserResponse.builder()
                 .id(user.getId())
@@ -39,7 +40,7 @@ public class UserServiceImpl implements UserService {
 
     public MessageResponse deleteUserById(IdRequest request){
 
-        userRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Invalid id"));
+        userRepository.findById(request.getId()).orElseThrow(() -> new NotFoundException("User with this id was not found"));
         userRepository.deleteById(request.getId());
         return new MessageResponse("User "+ request.getId() +" deleted");
     }

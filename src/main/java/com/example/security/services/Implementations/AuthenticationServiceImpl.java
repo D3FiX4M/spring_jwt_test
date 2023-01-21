@@ -1,5 +1,8 @@
 package com.example.security.services.Implementations;
 
+import com.example.security.Exceptions.ActivateException;
+import com.example.security.Exceptions.ExistException;
+import com.example.security.Exceptions.NotFoundException;
 import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RegisterRequest;
 import com.example.security.dto.response.AuthenticationResponse;
@@ -10,8 +13,6 @@ import com.example.security.entity.User;
 import com.example.security.repository.RoleRepository;
 import com.example.security.repository.UserRepository;
 import com.example.security.services.AuthenticationService;
-import com.example.security.services.EmailSenderService;
-import com.example.security.services.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,7 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,11 +40,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public MessageResponse registerNewUser(RegisterRequest request) {
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            return new MessageResponse("Error: Username is already taken!");
+            throw new ExistException("User with the same name already exists");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new MessageResponse("Error: Email is already taken!");
+            throw new ExistException("User with this email already exists");
         }
 
         Set<String> strRoles = request.getRoles();
@@ -53,16 +53,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         strRoles.removeIf(s -> !s.equals("admin") && !s.equals("user"));
 
         if (strRoles.isEmpty()) {
-            return new MessageResponse("Error: Roles is invalid");
+            throw  new NotFoundException("Roles not found");
         }
 
         if (strRoles.contains("admin")) {
             Role adminRole = roleRepository.findByName(ERole.ADMIN)
-                    .orElseThrow(() -> new RuntimeException("Invalid role ADMIN"));
+                    .orElseThrow(() -> new NotFoundException("Invalid role ADMIN"));
             roles.add(adminRole);
         } else {
             Role userRole = roleRepository.findByName(ERole.USER)
-                    .orElseThrow(() -> new RuntimeException("Invalid role USER"));
+                    .orElseThrow(() -> new NotFoundException("Invalid role USER"));
             roles.add(userRole);
         }
 
@@ -100,7 +100,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 ));
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(()->new NotFoundException("User not found"));
 
         if (user.getActivationCode().equals("active")) {
 
@@ -111,13 +111,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .token(jwtToken)
                     .build();
         } else {
-            return null;
+            throw new ActivateException("Please activate your account");
         }
     }
 
     public MessageResponse confirmAccount(String request) {
         User user = userRepository.findByActivationCode(request)
-                .orElseThrow(() -> new RuntimeException("Invalid activation code"));
+                .orElseThrow(() -> new NotFoundException("Activation code not found"));
             user.setActivationCode("active");
             userRepository.save(user);
             return new MessageResponse("Account activate successfully!");

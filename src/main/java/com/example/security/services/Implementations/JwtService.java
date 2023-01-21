@@ -1,4 +1,4 @@
-package com.example.security.services;
+package com.example.security.services.Implementations;
 
 import com.example.security.entity.User;
 import com.example.security.services.Implementations.UserDetailsServiceImpl;

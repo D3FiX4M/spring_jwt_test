@@ -2,8 +2,6 @@ package com.example.security.controllers;
 
 import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RegisterRequest;
-import com.example.security.dto.response.AuthenticationResponse;
-import com.example.security.dto.response.MessageResponse;
 import com.example.security.services.Implementations.AuthenticationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +26,8 @@ public class AuthenticationController {
     public ResponseEntity<?> authenticate(
             @RequestBody AuthenticationRequest request
     ) {
-        AuthenticationResponse isAuthenticate = authenticationServiceImpl.authenticate(request);
 
-        if (isAuthenticate == null) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Invalid activation"));
-        }
-        return ResponseEntity.ok(isAuthenticate);
+        return ResponseEntity.ok(authenticationServiceImpl.authenticate(request));
     }
 
 

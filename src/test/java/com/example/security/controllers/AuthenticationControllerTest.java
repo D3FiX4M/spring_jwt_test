@@ -1,33 +1,45 @@
 package com.example.security.controllers;
 
+import com.example.security.Exceptions.ActivateException;
+import com.example.security.Exceptions.ExistException;
+import com.example.security.Exceptions.NotFoundException;
 import com.example.security.dto.request.AuthenticationRequest;
 import com.example.security.dto.request.RegisterRequest;
 import com.example.security.dto.response.AuthenticationResponse;
 import com.example.security.dto.response.MessageResponse;
 import com.example.security.entity.User;
+import com.example.security.repository.UserRepository;
 import com.example.security.services.Implementations.AuthenticationServiceImpl;
 import com.example.security.services.Implementations.UserDetailsServiceImpl;
-import com.example.security.services.JwtService;
+import com.example.security.services.Implementations.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.result.ContentResultMatchers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @WebMvcTest(controllers = AuthenticationController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -77,8 +89,10 @@ class AuthenticationControllerTest {
 
     }
 
+    // REGISTER METHOD
+
     @Test
-    void should_Register() throws Exception {
+    void validRegister() throws Exception {
 
         when(authenticationServiceImpl.registerNewUser(registerRequest)).
                 thenReturn(new MessageResponse("User registered successfully, now to confirm your email account!"));
@@ -95,69 +109,63 @@ class AuthenticationControllerTest {
 
 
     @Test
-    void should_Register_give_error_Username_already_taken() throws Exception {
+    void notValidRegister_BecauseUsernameAlreadyExists() throws Exception {
+
 
         when(authenticationServiceImpl.registerNewUser(registerRequest)).
-                thenReturn(new MessageResponse("Error: Username is already taken!"));
+                thenThrow(new ExistException("User with the same name already exists"));
+
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest)));
 
-        response.andExpect(MockMvcResultMatchers.status().isOk())
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
                 .andExpect(MockMvcResultMatchers.jsonPath(
-                        "$.message", CoreMatchers.is("Error: Username is already taken!")));
+                        "$.message", CoreMatchers.is("User with the same name already exists")));
 
     }
 
     @Test
-    void should_Register_give_error_Email_already_taken() throws Exception {
+    void notValidRegister_BecauseEmailAlreadyExists() throws Exception {
+
 
         when(authenticationServiceImpl.registerNewUser(registerRequest)).
-                thenReturn(new MessageResponse("Error: Email is already taken!"));
+                thenThrow(new ExistException("User with this email already exists"));
+
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest)));
 
-        response.andExpect(MockMvcResultMatchers.status().isOk())
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
                 .andExpect(MockMvcResultMatchers.jsonPath(
-                        "$.message", CoreMatchers.is("Error: Email is already taken!")));
+                        "$.message", CoreMatchers.is("User with this email already exists")));
 
     }
 
     @Test
-    void should_Register_give_error_Role_is_invalid() throws Exception {
+    void notValidRegister_BecauseRoleIsEmpty() throws Exception {
+
 
         when(authenticationServiceImpl.registerNewUser(registerRequest)).
-                thenReturn(new MessageResponse("Error: Roles is invalid"));
+                thenThrow(new ExistException("Roles not found"));
+
 
         ResultActions response = mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest)));
 
-        response.andExpect(MockMvcResultMatchers.status().isOk())
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
                 .andExpect(MockMvcResultMatchers.jsonPath(
-                        "$.message", CoreMatchers.is("Error: Roles is invalid")));
+                        "$.message", CoreMatchers.is("Roles not found")));
 
     }
 
-    @Test
-    void should_Authenticate_Give_400() throws Exception {
-        String message = "Invalid activation";
-        when(authenticationServiceImpl.authenticate(authenticationRequest)).thenReturn(null);
-
-        ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authenticationRequest)));
-
-        response.andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is(message)));
-
-    }
+    // AUTHENTICATE METHOD
 
     @Test
-    void should_Authenticate() throws Exception {
+    void validAuthenticate() throws Exception {
 
 
         when(authenticationServiceImpl.authenticate(authenticationRequest)).
@@ -167,16 +175,75 @@ class AuthenticationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authenticationRequest)));
 
-        response.andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.username", CoreMatchers.is(authenticationResponse.getUsername())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.roles", CoreMatchers.is(authenticationResponse.getRoles())))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token", CoreMatchers.is("testToken")));
+        response.andExpect(MockMvcResultMatchers.status().isOk());
+
+        String responseAsString = response.andReturn().getResponse().getContentAsString();
+
+        AuthenticationResponse ResponseAsAuthenticationResponse = objectMapper.readValue(responseAsString, AuthenticationResponse.class);
+
+        assertThat(ResponseAsAuthenticationResponse).isEqualTo(authenticationResponse);
+
 
     }
 
     @Test
-    void should_ConfirmAccount() throws Exception {
+    void notValidAuthenticate_BecauseInvalidUsername() throws Exception {
+
+
+        when(authenticationServiceImpl.authenticate(authenticationRequest))
+                .thenThrow(new BadCredentialsException("Invalid username"));
+
+        ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(authenticationRequest)));
+
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("Invalid username")));
+
+    }
+
+    @Test
+    void notValidAuthenticate_BecauseInvalidPassword() throws Exception {
+
+
+        when(authenticationServiceImpl.authenticate(authenticationRequest))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+
+        ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(authenticationRequest)));
+
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("Bad credentials")));
+
+    }
+
+    @Test
+    void notValidAuthenticate_BecauseNoActivationEmail() throws Exception {
+
+
+        when(authenticationServiceImpl.authenticate(authenticationRequest))
+                .thenThrow(new ActivateException("Please activate your account"));
+
+        ResultActions response = mockMvc.perform(post("/api/auth/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(authenticationRequest)));
+
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("Please activate your account")));
+
+    }
+
+
+    // CONFIRM ACCOUNT METHOD
+
+
+
+    @Test
+    void validConfirmAccount() throws Exception {
+
         String activationCode = "testCode";
+
         when(authenticationServiceImpl.confirmAccount(activationCode))
                 .thenReturn(new MessageResponse("Account activate successfully!"));
 
@@ -187,5 +254,23 @@ class AuthenticationControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("Account activate successfully!")));
 
     }
+
+    @Test
+    void notValidConfirmAccount() throws Exception {
+
+        String activationCode = "testCode";
+
+        when(authenticationServiceImpl.confirmAccount(activationCode))
+                .thenThrow(new NotFoundException("Activation code not found!"));
+
+        ResultActions response = mockMvc.perform(get("/api/auth/confirm-account?code=" + activationCode)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        response.andExpect(MockMvcResultMatchers.status().is4xxClientError())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", CoreMatchers.is("Activation code not found!")));
+
+    }
+
+
 
 }
