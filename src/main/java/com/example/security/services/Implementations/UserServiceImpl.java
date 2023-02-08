@@ -8,6 +8,8 @@ import com.example.security.entity.User;
 import com.example.security.repository.UserRepository;
 import com.example.security.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +20,13 @@ public class UserServiceImpl implements UserService {
 
 
     private final UserRepository userRepository;
+
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username)
+                .orElseThrow(()->new RuntimeException("Invalid username"));
+    }
 
     public List<User> getUserList(){
 

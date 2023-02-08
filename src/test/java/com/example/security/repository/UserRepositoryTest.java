@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -29,6 +30,7 @@ class UserRepositoryTest {
     }
 
     @Test
+    @Transactional
     void findByUsername() {
 
         userRepository.save(user);
@@ -40,6 +42,7 @@ class UserRepositoryTest {
     }
 
     @Test
+    @Transactional
     void findByActivationCode() {
 
         userRepository.save(user);
@@ -49,6 +52,7 @@ class UserRepositoryTest {
     }
 
     @Test
+    @Transactional
     void existsByUsername() {
         userRepository.save(user);
         boolean isFind = userRepository.existsByUsername(user.getUsername());
@@ -57,6 +61,7 @@ class UserRepositoryTest {
     }
 
     @Test
+    @Transactional
     void existsByEmail() {
         userRepository.save(user);
         boolean isFind = userRepository.existsByEmail(user.getEmail());

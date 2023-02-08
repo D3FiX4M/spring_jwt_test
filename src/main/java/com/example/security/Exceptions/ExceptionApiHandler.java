@@ -1,4 +1,4 @@
-package com.example.security.services;
+package com.example.security.Exceptions;
 
 import com.example.security.Exceptions.ExistException;
 import com.example.security.Exceptions.NotFoundException;

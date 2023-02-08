@@ -1,7 +1,7 @@
 package com.example.security;
 
-import com.example.security.services.Implementations.UserDetailsServiceImpl;
 import com.example.security.services.Implementations.JwtService;
+import com.example.security.services.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
 
-  private final UserDetailsServiceImpl userDetailsService;
+  private final UserService userDetailsService;
 
   @Override
   protected void doFilterInternal(
